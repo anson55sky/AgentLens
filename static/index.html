@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Reach</title>
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #242836; --border: #2e3348;
+  --text: #e4e6f0; --text2: #8b8fa8; --accent: #6c5ce7; --accent2: #a29bfe;
+  --green: #00cec9; --red: #ff6b6b; --orange: #fdcb6e; --xhs: #ff2442;
+  --radius: 12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{display:flex;height:100vh}
+/* Sidebar */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:20px 16px 14px;border-bottom:1px solid var(--border)}
+.sidebar-header h1{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sidebar-header p{font-size:11px;color:var(--text2);margin-top:3px}
+.nav{flex:1;padding:10px 6px;overflow-y:auto}
+.nav-group{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;padding:12px 14px 4px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;margin-bottom:1px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent);color:#fff}
+.nav-item .icon{font-size:16px;width:22px;text-align:center}
+.nav-item .badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:8px;background:var(--surface2);color:var(--text2)}
+.nav-item.active .badge{background:rgba(255,255,255,.2);color:#fff}
+.sidebar-footer{padding:10px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--surface);flex-wrap:wrap}
+.topbar h2{font-size:15px;font-weight:600;white-space:nowrap}
+.search-box{flex:1;max-width:480px;position:relative}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;outline:none;transition:border .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box input::placeholder{color:var(--text2)}
+.search-box .si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px}
+.btn{padding:7px 16px;border-radius:8px;border:none;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+.btn-sm{padding:5px 11px;font-size:11px}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--text2);color:var(--text)}
+.btn-xhs{background:var(--xhs);color:#fff}.btn-xhs:hover{opacity:.85}
+.btn-twitter{background:#1d9bf0;color:#fff}.btn-twitter:hover{opacity:.85}
+.btn-bili{background:#fb7299;color:#fff}.btn-bili:hover{opacity:.85}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.panel{display:none}.panel.active{display:block}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .2s,transform .15s;cursor:default}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card-title{font-size:14px;font-weight:600;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:11px;color:var(--text2);margin-bottom:8px}
+.card-desc{font-size:12px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-footer{display:flex;align-items:center;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)}
+.card-footer .stat{display:flex;align-items:center;gap:3px}
+.card-actions{margin-left:auto;display:flex;gap:5px}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;background:var(--surface2);color:var(--accent2);margin-right:3px}
+/* XHS */
+.xhs-card .cover{width:100%;height:170px;object-fit:cover;border-radius:8px;margin-bottom:10px;background:var(--surface2)}
+.xhs-card .author{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.xhs-card .avatar{width:26px;height:26px;border-radius:50%;background:var(--surface2)}
+.xhs-card .author-name{font-size:12px;color:var(--text2)}
+/* Result box */
+.result-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:14px}
+.result-box h3{font-size:15px;margin-bottom:10px}
+.info-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--text2)}
+.info-row span{display:flex;align-items:center;gap:4px}
+.download-link{display:inline-block;margin-top:10px;padding:9px 18px;background:linear-gradient(135deg,#fe2c55,#25f4ee);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px}
+.download-link:hover{opacity:.85}
+/* Text content */
+.text-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;max-height:500px;overflow-y:auto}
+/* Loading / Empty */
+.loading{display:flex;align-items:center;justify-content:center;padding:50px;color:var(--text2);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:var(--text2)}
+.empty .eicon{font-size:40px;margin-bottom:10px}
+.empty p{font-size:13px}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto;padding:24px;position:relative}
+.modal-close{position:absolute;top:14px;right:14px;background:var(--surface2);border:none;color:var(--text2);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text)}
+.modal h3{font-size:16px;margin-bottom:14px;padding-right:36px}
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:8px;font-size:12px;color:#fff;z-index:200;transform:translateY(70px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:var(--green);color:var(--bg)}.toast.error{background:var(--red)}
+/* Welcome */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:30px}
+.welcome .logo{font-size:56px;margin-bottom:16px}
+.welcome h2{font-size:22px;margin-bottom:6px}
+.welcome p{color:var(--text2);font-size:13px;max-width:380px;line-height:1.6}
+.quick-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.quick-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;cursor:pointer;transition:all .2s;text-align:center;width:120px}
+.quick-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.quick-card .qicon{font-size:28px;margin-bottom:6px}
+.quick-card .qlabel{font-size:12px;font-weight:500}
+.quick-card .qdesc{font-size:10px;color:var(--text2);margin-top:2px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1><span>👁️</span> Agent Reach</h1>
+      <p>互联网能力中心</p>
+    </div>
+    <div class="nav">
+      <div class="nav-item active" data-panel="home"><span class="icon">🏠</span>首页</div>
+      <div class="nav-group">社交平台</div>
+      <div class="nav-item" data-panel="github"><span class="icon">🐙</span>GitHub<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="xhs"><span class="icon">📕</span>小红书<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="douyin"><span class="icon">🎵</span>抖音<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="twitter"><span class="icon">🐦</span>Twitter/X<span class="badge">✅</span></div>
+      <div class="nav-group">视频平台</div>
+      <div class="nav-item" data-panel="youtube"><span class="icon">📺</span>YouTube<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="bilibili"><span class="icon">📺</span>B站<span class="badge">✅</span></div>
+      <div class="nav-group">搜索 & 阅读</div>
+      <div class="nav-item" data-panel="exa"><span class="icon">🔍</span>全网搜索<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="web"><span class="icon">🌐</span>任意网页<span class="badge">✅</span></div>
+      <div class="nav-item" data-panel="rss"><span class="icon">📡</span>RSS<span class="badge">✅</span></div>
+    </div>
+    <div class="sidebar-footer"><span class="status-dot"></span>9 个渠道在线</div>
+  </div>
+
+  <div class="main">
+    <!-- Home -->
+    <div class="panel active" id="panel-home">
+      <div class="welcome">
+        <div class="logo">👁️</div>
+        <h2>Agent Reach</h2>
+        <p>你的互联网能力中心已就绪，选择一个平台开始探索</p>
+        <div class="quick-actions">
+          <div class="quick-card" onclick="go('github')"><div class="qicon">🐙</div><div class="qlabel">GitHub</div><div class="qdesc">搜索仓库</div></div>
+          <div class="quick-card" onclick="go('xhs')"><div class="qicon">📕</div><div class="qlabel">小红书</div><div class="qdesc">搜索笔记</div></div>
+          <div class="quick-card" onclick="go('douyin')"><div class="qicon">🎵</div><div class="qlabel">抖音</div><div class="qdesc">解析视频</div></div>
+          <div class="quick-card" onclick="go('twitter')"><div class="qicon">🐦</div><div class="qlabel">Twitter</div><div class="qdesc">搜索推文</div></div>
+          <div class="quick-card" onclick="go('youtube')"><div class="qicon">📺</div><div class="qlabel">YouTube</div><div class="qdesc">视频字幕</div></div>
+          <div class="quick-card" onclick="go('bilibili')"><div class="qicon">📺</div><div class="qlabel">B站</div><div class="qdesc">视频字幕</div></div>
+          <div class="quick-card" onclick="go('exa')"><div class="qicon">🔍</div><div class="qlabel">全网搜索</div><div class="qdesc">语义搜索</div></div>
+          <div class="quick-card" onclick="go('web')"><div class="qicon">🌐</div><div class="qlabel">网页阅读</div><div class="qdesc">提取内容</div></div>
+          <div class="quick-card" onclick="go('rss')"><div class="qicon">📡</div><div class="qlabel">RSS</div><div class="qdesc">订阅源</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub -->
+    <div class="panel" id="panel-github">
+      <div class="topbar">
+        <h2>🐙 GitHub</h2>
+        <div class="search-box"><span class="si">🔍</span><input id="gh-q" placeholder="搜索仓库..." onkeydown="if(event.key==='Enter')ghSearch()"></div>
+        <button class="btn btn-primary" onclick="ghSearch()">搜索</button>
+        <input id="gh-repo" placeholder="owner/repo" style="padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;width:180px;outline:none" onkeydown="if(event.key==='Enter')ghRepo()">
+        <button class="btn btn-sm btn-ghost" onclick="ghRepo()">详情</button>
+        <button class="btn btn-sm btn-ghost" onclick="ghIssues()">Issues</button>
+      </div>
+      <div class="content" id="gh-out"></div>
+    </div>
+
+    <!-- XiaoHongShu -->
+    <div class="panel" id="panel-xhs">
+      <div class="topbar">
+        <h2>📕 小红书</h2>
+        <div class="search-box"><span class="si">🔍</span><input id="xhs-q" placeholder="搜索笔记..." onkeydown="if(event.key==='Enter')xhsSearch()"></div>
+        <button class="btn btn-xhs" onclick="xhsSearch()">搜索</button>
+        <button class="btn btn-sm btn-ghost" onclick="xhsHome()">首页推荐</button>
+      </div>
+      <div class="content" id="xhs-out"></div>
+    </div>
+
+    <!-- Douyin -->
+    <div class="panel" id="panel-douyin">
+      <div class="topbar">
+        <h2>🎵 抖音</h2>
+        <div class="search-box"><span class="si">🔗</span><input id="dy-link" placeholder="粘贴抖音分享链接..." onkeydown="if(event.key==='Enter')dyParse()"></div>
+        <button class="btn btn-primary" onclick="dyParse()">解析</button>
+        <button class="btn btn-sm btn-ghost" onclick="dyDownload()">下载链接</button>
+      </div>
+      <div class="content" id="dy-out"></div>
+    </div>
+
+    <!-- Twitter -->
+    <div class="panel" id="panel-twitter">
+      <div class="topbar">
+        <h2>🐦 Twitter / X</h2>
+        <div class="search-box"><span class="si">🔍</span><input id="tw-q" placeholder="搜索推文..." onkeydown="if(event.key==='Enter')twSearch()"></div>
+        <button class="btn btn-twitter" onclick="twSearch()">搜索</button>
+        <input id="tw-handle" placeholder="@用户名 或 推文链接" style="padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;width:180px;outline:none" onkeydown="if(event.key==='Enter')twUser()">
+        <button class="btn btn-sm btn-ghost" onclick="twUser()">用户</button>
+        <button class="btn btn-sm btn-ghost" onclick="twTweet()">推文</button>
+      </div>
+      <div class="content" id="tw-out"></div>
+    </div>
+
+    <!-- YouTube -->
+    <div class="panel" id="panel-youtube">
+      <div class="topbar">
+        <h2>📺 YouTube</h2>
+        <div class="search-box"><span class="si">🔗</span><input id="yt-url" placeholder="粘贴 YouTube 视频链接..." onkeydown="if(event.key==='Enter')ytInfo()"></div>
+        <button class="btn btn-primary" onclick="ytInfo()" style="background:#ff0000">视频信息</button>
+        <button class="btn btn-sm btn-ghost" onclick="ytSub()">提取字幕</button>
+      </div>
+      <div class="content" id="yt-out"></div>
+    </div>
+
+    <!-- Bilibili -->
+    <div class="panel" id="panel-bilibili">
+      <div class="topbar">
+        <h2>📺 B站</h2>
+        <div class="search-box"><span class="si">🔗</span><input id="bili-url" placeholder="粘贴B站视频链接..." onkeydown="if(event.key==='Enter')biliInfo()"></div>
+        <button class="btn btn-bili" onclick="biliInfo()">视频信息</button>
+        <button class="btn btn-sm btn-ghost" onclick="biliSub()">提取字幕</button>
+      </div>
+      <div class="content" id="bili-out"></div>
+    </div>
+
+    <!-- Exa -->
+    <div class="panel" id="panel-exa">
+      <div class="topbar">
+        <h2>🔍 全网语义搜索</h2>
+        <div class="search-box"><span class="si">🔍</span><input id="exa-q" placeholder="输入任意问题或关键词..." onkeydown="if(event.key==='Enter')exaSearch()"></div>
+        <button class="btn btn-primary" onclick="exaSearch()">搜索</button>
+      </div>
+      <div class="content" id="exa-out"></div>
+    </div>
+
+    <!-- Web -->
+    <div class="panel" id="panel-web">
+      <div class="topbar">
+        <h2>🌐 任意网页阅读</h2>
+        <div class="search-box"><span class="si">🔗</span><input id="web-url" placeholder="输入任意网页链接..." onkeydown="if(event.key==='Enter')webRead()"></div>
+        <button class="btn btn-primary" onclick="webRead()">提取内容</button>
+      </div>
+      <div class="content" id="web-out"></div>
+    </div>
+
+    <!-- RSS -->
+    <div class="panel" id="panel-rss">
+      <div class="topbar">
+        <h2>📡 RSS 订阅源</h2>
+        <div class="search-box"><span class="si">🔗</span><input id="rss-url" placeholder="输入 RSS/Atom 源地址..." onkeydown="if(event.key==='Enter')rssRead()"></div>
+        <button class="btn btn-primary" onclick="rssRead()">读取</button>
+      </div>
+      <div class="content" id="rss-out"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><div id="modal-content"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Nav ── */
+function go(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  document.querySelector(`.nav-item[data-panel="${n}"]`).classList.add('active');
+}
+document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>go(i.dataset.panel)));
+
+/* ── Helpers ── */
+function L(el){el.innerHTML='<div class="loading"><div class="spinner"></div>加载中...</div>'}
+function E(el,m){el.innerHTML=`<div class="empty"><div class="eicon">📭</div><p>${m}</p></div>`}
+function Err(el,m){el.innerHTML=`<div class="empty"><div class="eicon">⚠️</div><p style="color:var(--red)">${esc(m)}</p></div>`}
+function toast(m,t='success'){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+t+' show';setTimeout(()=>e.classList.remove('show'),2500)}
+async function api(u){return(await fetch(u)).json()}
+async function post(u,b){return(await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json()}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function fmt(n){if(n==null)return'0';n=Number(n);if(n>=10000)return(n/10000).toFixed(1)+'w';if(n>=1000)return(n/1000).toFixed(1)+'k';return String(n)}
+function ago(s){if(!s)return'';const d=new Date(s),m=Math.floor((Date.now()-d)/60000);if(m<60)return m+'分钟前';const h=Math.floor(m/60);if(h<24)return h+'小时前';const dy=Math.floor(h/24);if(dy<30)return dy+'天前';return d.toLocaleDateString('zh-CN')}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show')}
+function openModal(html){const m=document.getElementById('modal-content');m.innerHTML=html;document.getElementById('modal-overlay').classList.add('show')}
+
+/* ═══ GitHub ═══ */
+async function ghSearch(){
+  const q=document.getElementById('gh-q').value.trim();if(!q)return;
+  const el=document.getElementById('gh-out');L(el);
+  const r=await api('/api/github/search?q='+encodeURIComponent(q));
+  if(!r.ok)return Err(el,r.error);
+  const d=r.data||[];if(!d.length)return E(el,'没有找到相关仓库');
+  el.innerHTML='<div class="card-grid">'+d.map(r=>`
+    <div class="card" style="cursor:pointer" onclick="document.getElementById('gh-repo').value='${esc(r.fullName)}';ghRepo()">
+      <div class="card-title">${esc(r.fullName)}</div>
+      <div class="card-desc">${esc(r.description||'暂无描述')}</div>
+      <div class="card-footer">
+        <span class="stat">⭐ ${fmt(r.stargazersCount)}</span>
+        ${r.language?`<span class="tag">${r.language}</span>`:''}
+        <span class="stat" style="margin-left:auto">${ago(r.updatedAt)}</span>
+      </div>
+    </div>`).join('')+'</div>';
+}
+async function ghRepo(){
+  const repo=document.getElementById('gh-repo').value.trim();if(!repo||!repo.includes('/'))return toast('请输入 owner/repo 格式','error');
+  const el=document.getElementById('gh-out');L(el);
+  const r=await api('/api/github/repo?repo='+encodeURIComponent(repo));
+  if(!r.ok)return Err(el,r.error);
+  const d=r.data||{};
+  el.innerHTML=`<div class="result-box"><h3>${esc(d.name||repo)}</h3>
+    <p style="color:var(--text2);margin-bottom:14px">${esc(d.description||'')}</p>
+    <div class="info-row"><span>⭐ ${fmt(d.stargazerCount)} Stars</span><span>🍴 ${fmt(d.forkCount)} Forks</span></div>
+    <a href="${d.url||'https://github.com/'+repo}" target="_blank" class="btn btn-primary" style="text-decoration:none;margin-top:8px">在 GitHub 打开</a>
+    <button class="btn btn-ghost" style="margin-left:8px" onclick="ghIssues()">查看 Issues</button></div>`;
+}
+async function ghIssues(){
+  const repo=document.getElementById('gh-repo').value.trim();if(!repo||!repo.includes('/'))return toast('请输入 owner/repo 格式','error');
+  const el=document.getElementById('gh-out');L(el);
+  const r=await api('/api/github/issues?repo='+encodeURIComponent(repo));
+  if(!r.ok)return Err(el,r.error);
+  const d=r.data||[];if(!d.length)return E(el,'该仓库暂无 Issue');
+  el.innerHTML='<h3 style="margin-bottom:12px">📋 '+esc(repo)+' Issues</h3><div class="card-grid">'+d.map(i=>`
+    <div class="card" style="cursor:pointer" onclick="window.open('${i.url}','_blank')">
+      <div class="card-title">#${i.number} ${esc(i.title)}</div>
+      <div class="card-footer">
+        <span class="tag" style="${i.state==='OPEN'?'color:var(--green)':'color:var(--red)'}">${i.state}</span>
+        <span class="stat">${i.author?.login||'—'}</span>
+        <span class="stat" style="margin-left:auto">${ago(i.createdAt)}</span>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+/* ═══ XiaoHongShu ═══ */
+let xF=[];
+async function xhsSearch(){const q=document.getElementById('xhs-q').value.trim();if(!q)return;const el=document.getElementById('xhs-out');L(el);const r=await api('/api/xhs/search?q='+encodeURIComponent(q));if(!r.ok)return Err(el,r.error);renderXhs(el,r)}
+async function xhsHome(){const el=document.getElementById('xhs-out');L(el);const r=await api('/api/xhs/home');if(!r.ok)return Err(el,r.error);renderXhs(el,r)}
+function renderXhs(el,res){
+  let feeds=[];try{const p=typeof res.data==='string'?JSON.parse(res.data):res.data;if(p&&p.feeds)feeds=p.feeds;else if(Array.isArray(p))feeds=p;else if(res.raw){const m=res.raw.match(/\{[\s\S]*"feeds"[\s\S]*\}/);if(m)feeds=JSON.parse(m[0]).feeds||[]}}catch(e){if(res.raw)try{const m=res.raw.match(/\{[\s\S]*"feeds"[\s\S]*\}/);if(m)feeds=JSON.parse(m[0]).feeds||[]}catch(e2){}}
+  xF=feeds;if(!feeds.length)return E(el,'没有找到相关笔记');
+  el.innerHTML='<div class="card-grid">'+feeds.map((f,i)=>{const nc=f.noteCard||{},u=nc.user||{},it=nc.interactInfo||{},cv=nc.cover||{},cu=cv.urlDefault||cv.urlPre||'';
+    return`<div class="card xhs-card" onclick="xhsDetail(${i})">
+      ${cu?`<img class="cover" src="${cu}" onerror="this.style.display='none'" loading="lazy">`:''}
+      <div class="author">${u.avatar?`<img class="avatar" src="${u.avatar}">`:'<div class="avatar"></div>'}
+        <span class="author-name">${esc(u.nickname||u.nickName||'—')}</span>
+        <span class="tag" style="margin-left:auto">${nc.type==='video'?'视频':'图文'}</span></div>
+      <div class="card-title">${esc(nc.displayTitle||'无标题')}</div>
+      <div class="card-footer"><span class="stat">❤️ ${it.likedCount||0}</span><span class="stat">⭐ ${it.collectedCount||0}</span><span class="stat">💬 ${it.commentCount||0}</span>
+        <div class="card-actions"><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();xhsLike(${i})">👍</button><button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();xhsFav(${i})">⭐</button></div></div></div>`}).join('')+'</div>';
+}
+async function xhsDetail(i){const f=xF[i];if(!f)return;openModal('<div class="loading"><div class="spinner"></div>加载详情...</div>');const r=await api(`/api/xhs/detail?feed_id=${f.id}&xsec_token=${encodeURIComponent(f.xsecToken)}`);if(!r.ok){document.getElementById('modal-content').innerHTML=`<p style="color:var(--red)">${r.error||'加载失败'}</p>`;return}let d={};try{d=typeof r.data==='string'?JSON.parse(r.data):r.data}catch(e){document.getElementById('modal-content').innerHTML=`<pre style="white-space:pre-wrap;font-size:12px">${esc(r.raw||JSON.stringify(r.data))}</pre>`;return}document.getElementById('modal-content').innerHTML=`<h3>${esc(d.title||d.displayTitle||f.noteCard?.displayTitle||'')}</h3><div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${esc(d.desc||d.content||'')}</div><div style="margin-top:14px;display:flex;gap:10px"><button class="btn btn-sm btn-xhs" onclick="xhsLike(${i});toast('已点赞')">❤️ 点赞</button><button class="btn btn-sm btn-ghost" onclick="xhsFav(${i});toast('已收藏')">⭐ 收藏</button></div>`}
+async function xhsLike(i){const f=xF[i];if(!f)return;await post('/api/xhs/like',{feed_id:f.id,xsec_token:f.xsecToken});toast('点赞成功')}
+async function xhsFav(i){const f=xF[i];if(!f)return;await post('/api/xhs/favorite',{feed_id:f.id,xsec_token:f.xsecToken});toast('收藏成功')}
+
+/* ═══ Douyin ═══ */
+async function dyParse(){const link=document.getElementById('dy-link').value.trim();if(!link)return;const el=document.getElementById('dy-out');L(el);const r=await api('/api/douyin/parse?link='+encodeURIComponent(link));if(!r.ok)return Err(el,r.error);let d={};try{d=typeof r.data==='string'?JSON.parse(r.data):r.data}catch(e){}el.innerHTML=`<div class="result-box"><h3>${esc(d.title||d.desc||'抖音视频')}</h3><div class="info-row">${d.author?`<span>👤 ${esc(d.author)}</span>`:''}${d.digg_count!=null?`<span>❤️ ${fmt(d.digg_count)}</span>`:''}${d.comment_count!=null?`<span>💬 ${fmt(d.comment_count)}</span>`:''}</div><pre style="font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:250px;overflow-y:auto">${esc(JSON.stringify(d,null,2))}</pre><button class="btn btn-primary" style="margin-top:12px" onclick="dyDownload()">获取无水印下载链接</button></div>`}
+async function dyDownload(){const link=document.getElementById('dy-link').value.trim();if(!link)return;const el=document.getElementById('dy-out');L(el);const r=await api('/api/douyin/download?link='+encodeURIComponent(link));if(!r.ok)return Err(el,r.error);let d={};try{d=typeof r.data==='string'?JSON.parse(r.data):r.data}catch(e){}const u=d.download_url||d.url||d.video_url||'';el.innerHTML=`<div class="result-box"><h3>🎬 下载链接已获取</h3>${u?`<a href="${u}" target="_blank" class="download-link">📥 点击下载无水印视频</a>`:''}<pre style="font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:250px;overflow-y:auto;margin-top:14px">${esc(JSON.stringify(d,null,2))}</pre></div>`}
+
+/* ═══ Twitter ═══ */
+async function twSearch(){const q=document.getElementById('tw-q').value.trim();if(!q)return;const el=document.getElementById('tw-out');L(el);const r=await api('/api/twitter/search?q='+encodeURIComponent(q));if(!r.ok)return Err(el,r.error);let d=r.data;if(typeof d==='string')try{d=JSON.parse(d)}catch(e){}if(!d||(!Array.isArray(d)&&!d.tweets))return el.innerHTML=`<div class="text-content">${esc(r.raw||JSON.stringify(d,null,2))}</div>`;const tweets=Array.isArray(d)?d:(d.tweets||[]);if(!tweets.length)return E(el,'没有找到相关推文');el.innerHTML='<div class="card-grid">'+tweets.map(t=>`<div class="card"><div class="card-meta">@${esc(t.user?.screen_name||t.username||t.handle||'')}</div><div class="card-desc" style="-webkit-line-clamp:5">${esc(t.text||t.full_text||t.content||'')}</div><div class="card-footer"><span class="stat">❤️ ${fmt(t.favorite_count||t.likes||0)}</span><span class="stat">🔁 ${fmt(t.retweet_count||t.retweets||0)}</span><span class="stat" style="margin-left:auto">${ago(t.created_at||'')}</span></div></div>`).join('')+'</div>'}
+async function twUser(){const h=document.getElementById('tw-handle').value.trim();if(!h)return;const el=document.getElementById('tw-out');L(el);if(h.startsWith('http')){const r=await api('/api/twitter/tweet?url='+encodeURIComponent(h));if(!r.ok)return Err(el,r.error);el.innerHTML=`<div class="text-content">${esc(r.raw||JSON.stringify(r.data,null,2))}</div>`;return}const r=await api('/api/twitter/user?handle='+encodeURIComponent(h.replace('@','')));if(!r.ok)return Err(el,r.error);let d=r.data;if(typeof d==='string')try{d=JSON.parse(d)}catch(e){}el.innerHTML=`<div class="result-box"><h3>@${esc(d.screen_name||d.username||h)}</h3><p style="color:var(--text2);margin-bottom:12px">${esc(d.description||d.bio||'')}</p><div class="info-row"><span>👥 ${fmt(d.followers_count||d.followers||0)} 粉丝</span><span>📝 ${fmt(d.statuses_count||d.tweets_count||0)} 推文</span></div></div>`}
+async function twTweet(){const u=document.getElementById('tw-handle').value.trim();if(!u)return;const el=document.getElementById('tw-out');L(el);const r=await api('/api/twitter/tweet?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);el.innerHTML=`<div class="text-content">${esc(r.raw||JSON.stringify(r.data,null,2))}</div>`}
+
+/* ═══ YouTube ═══ */
+async function ytInfo(){const u=document.getElementById('yt-url').value.trim();if(!u)return;const el=document.getElementById('yt-out');L(el);const r=await api('/api/youtube/info?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);const d=r.data||{};el.innerHTML=`<div class="result-box">${d.thumbnail?`<img src="${d.thumbnail}" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-bottom:14px">`:''}
+  <h3>${esc(d.title)}</h3><div class="info-row"><span>👤 ${esc(d.uploader)}</span><span>⏱️ ${d.duration_string||''}</span><span>👁️ ${fmt(d.view_count)} 播放</span><span>👍 ${fmt(d.like_count)}</span></div>
+  <p style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-top:10px">${esc(d.description)}</p>
+  <div style="margin-top:14px"><a href="${d.webpage_url}" target="_blank" class="btn btn-primary" style="text-decoration:none;background:#ff0000">打开 YouTube</a><button class="btn btn-ghost" style="margin-left:8px" onclick="ytSub()">提取字幕</button></div></div>`}
+async function ytSub(){const u=document.getElementById('yt-url').value.trim();if(!u)return;const el=document.getElementById('yt-out');L(el);const r=await api('/api/youtube/subtitles?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);el.innerHTML=`<h3 style="margin-bottom:10px">📝 字幕内容</h3><div class="text-content">${esc(r.data?.text||'')}</div>`}
+
+/* ═══ Bilibili ═══ */
+async function biliInfo(){const u=document.getElementById('bili-url').value.trim();if(!u)return;const el=document.getElementById('bili-out');L(el);const r=await api('/api/bilibili/info?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);const d=r.data||{};el.innerHTML=`<div class="result-box">${d.thumbnail?`<img src="${d.thumbnail}" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-bottom:14px">`:''}
+  <h3>${esc(d.title)}</h3><div class="info-row"><span>👤 ${esc(d.uploader)}</span><span>⏱️ ${d.duration_string||''}</span><span>👁️ ${fmt(d.view_count)} 播放</span><span>👍 ${fmt(d.like_count)}</span><span>💬 ${fmt(d.comment_count)}</span></div>
+  <p style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-top:10px">${esc(d.description)}</p>
+  <div style="margin-top:14px"><a href="${d.webpage_url}" target="_blank" class="btn btn-bili" style="text-decoration:none">打开B站</a><button class="btn btn-ghost" style="margin-left:8px" onclick="biliSub()">提取字幕</button></div></div>`}
+async function biliSub(){const u=document.getElementById('bili-url').value.trim();if(!u)return;const el=document.getElementById('bili-out');L(el);const r=await api('/api/bilibili/subtitles?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);el.innerHTML=`<h3 style="margin-bottom:10px">📝 字幕内容</h3><div class="text-content">${esc(r.data?.text||'')}</div>`}
+
+/* ═══ Exa ═══ */
+async function exaSearch(){const q=document.getElementById('exa-q').value.trim();if(!q)return;const el=document.getElementById('exa-out');L(el);const r=await api('/api/exa/search?q='+encodeURIComponent(q));if(!r.ok)return Err(el,r.error);let d=r.data;if(typeof d==='string')try{d=JSON.parse(d)}catch(e){}if(r.raw){el.innerHTML=`<div class="text-content">${esc(r.raw)}</div>`;return}const results=d?.results||d?.webPages||(Array.isArray(d)?d:[]);if(!results.length){el.innerHTML=`<div class="text-content">${esc(JSON.stringify(d,null,2))}</div>`;return}el.innerHTML='<div class="card-grid">'+results.map(r=>`<div class="card" style="cursor:pointer" onclick="window.open('${r.url||r.link||''}','_blank')"><div class="card-title">${esc(r.title||'')}</div><div class="card-meta">${esc(r.url||r.link||'')}</div><div class="card-desc">${esc((r.text||r.snippet||r.content||'').substring(0,200))}</div></div>`).join('')+'</div>'}
+
+/* ═══ Web ═══ */
+async function webRead(){const u=document.getElementById('web-url').value.trim();if(!u)return;const el=document.getElementById('web-out');L(el);const r=await api('/api/web/read?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);el.innerHTML=`<div style="margin-bottom:10px;font-size:12px;color:var(--text2)">📄 ${esc(r.data?.url||u)}</div><div class="text-content">${esc(r.data?.content||'')}</div>`}
+
+/* ═══ RSS ═══ */
+async function rssRead(){const u=document.getElementById('rss-url').value.trim();if(!u)return;const el=document.getElementById('rss-out');L(el);const r=await api('/api/rss/read?url='+encodeURIComponent(u));if(!r.ok)return Err(el,r.error);const d=r.data||{};const entries=d.entries||[];el.innerHTML=`<div class="result-box"><h3>📡 ${esc(d.title||'RSS Feed')}</h3><p style="font-size:12px;color:var(--text2);margin-bottom:14px">${esc(d.link||'')}</p></div>`+(entries.length?'<div class="card-grid" style="margin-top:14px">'+entries.map(e=>`<div class="card" style="cursor:pointer" onclick="window.open('${e.link}','_blank')"><div class="card-title">${esc(e.title)}</div><div class="card-meta">${esc(e.author||'')} · ${esc(e.published||'')}</div><div class="card-desc">${esc(e.summary)}</div></div>`).join('')+'</div>':'<div class="empty"><p>暂无内容</p></div>')}
+</script>
+</body>
+</html>
